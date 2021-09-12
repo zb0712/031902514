@@ -24,17 +24,21 @@ import org.junit.Assert;
  */
 public class Main {
     public static void main(String[] args) throws Exception {
+        String srcWords = args[0];
+        String srcText = args[1];
+        String desc = args[2];
         DfaSensitiveWords dfaSensitiveWords = new DfaSensitiveWords();
         //1.读入敏感词文件并添加到敏感词库中
-        String srcWords = "D:\\SensitiveWords\\src\\main\\resources\\words.txt";
-        String srcText = "D:\\SensitiveWords\\src\\main\\resources\\org.txt";
+//        String srcWords = "D:\\SensitiveWords\\src\\main\\resources\\words.txt";
+//        String srcText = "D:\\SensitiveWords\\src\\main\\resources\\org.txt";
+
         List<String> words = IOUtils.readText(srcWords);
         dfaSensitiveWords.init(words);
         List<String> lines = IOUtils.readText(srcText);
         for (int i = 0; i < lines.size(); i++) {
             dfaSensitiveWords.filter(lines.get(i),i+1);
         }
-        String desc = "D:\\SensitiveWords\\src\\main\\resources\\ans.txt";
+//        String desc = "D:\\SensitiveWords\\src\\main\\resources\\ans.txt";
         IOUtils.writeAns(desc);
     }
 }

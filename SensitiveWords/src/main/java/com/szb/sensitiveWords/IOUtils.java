@@ -12,11 +12,13 @@ public class IOUtils {
     public static List<String> ans = new ArrayList<>();
     public static List<String> readText(String src)  {
         File file = new File(src);
-        FileReader fileReader = null;
+        FileInputStream fis = null;
+        InputStreamReader fileReader = null;
         BufferedReader br = null;
         List<String> strings = null;
         try {
-            fileReader = new FileReader(file);
+            fis = new FileInputStream(file);
+            fileReader = new InputStreamReader(fis,"UTF-8");
             br = new BufferedReader(fileReader);
             String str;
             int i = 0;
@@ -50,11 +52,16 @@ public class IOUtils {
     }
 
     public static void writeAns(String desc) {
-        FileWriter fileWriter = null;
+//        FileWriter fileWriter = null;
         BufferedWriter bw = null;
+        FileOutputStream fos = null;
+        OutputStreamWriter fileWriter = null;
         try {
             File file = new File(desc);
-            fileWriter = new FileWriter(file,true);
+//            fileWriter = new OutputStreamWriter();
+//            String encoding = fileWriter.getEncoding();
+            fos = new FileOutputStream(file);
+            fileWriter = new OutputStreamWriter(fos,"UTF-8");
             bw = new BufferedWriter(fileWriter);
             bw.write("Total: " + ans.size());
             bw.newLine();
