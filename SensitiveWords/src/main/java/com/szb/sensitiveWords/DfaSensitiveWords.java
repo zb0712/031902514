@@ -5,13 +5,19 @@ import com.github.houbb.opencc4j.util.ZhConverterUtil;
 
 import java.util.*;
 
+
+/**
+ * DFA操作类
+ * @author 石致彬
+ * @since 2021-09-09 18:15
+ */
+@SuppressWarnings("all")
 public class DfaSensitiveWords implements ISensitiveWords {
 
     private final static String END_MARK_KEY = "end";
 
-    private final static int MIN_MATCH_FLAG = 2;
 
-    private String sensitive = "";
+    private String sensitive = ""; // 用于记录原文中的敏感词
     public static int total = 0;
     public HashMap wordsMap;
 
@@ -49,56 +55,19 @@ public class DfaSensitiveWords implements ISensitiveWords {
         }
     }
 
-    @Override
-    public void add(String keyword) {
-        if (wordsMap== null) {
-            throw new IllegalArgumentException("Please initialize first");
-        }
-    }
 
-    @Override
-    public boolean contain(String words) {
-        for (int i = 0; i < words.length(); i++) {
-            int matchFlag = this.check(words, i);
-            if (matchFlag > 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public Optional<String> first(String words) {
-        for (int i = 0; i < words.length(); i++) {
-            int length = this.check(words, i);
-            if (length > 0) {
-                return Optional.of(words.substring(i, i + length));
-            }
-        }
-        return Optional.empty();
-    }
-
-    @Override
-    public Set<String> all(String words) {
-        Set<String> sensitiveWordList = new HashSet<>();
-
-        for (int i = 0; i < words.length(); i++) {
-            int length = check(words, i);
-            if (length > 0) {
-                sensitiveWordList.add(words.substring(i, i + length));
-                i = i + length - 1;
-
-            }
-        }
-
-        return sensitiveWordList;
-    }
-
+    /**
+     * 进行敏感词过滤
+     * @param word      文本
+     * @param line      行号
+     */
     public void filter(String word,int line) {
         //去除特殊符号，转换为小写，繁体转简体
         String str = word.replaceAll("([^\\u4e00-\\u9fc2A-Za-z0-9])", " ");
         str = str.toLowerCase();
         String simple = ZhConverterUtil.toSimple(str);
+
+        //循环进行DFA检测
         for (int i = 0; i < word.length(); i++) {
             this.sensitive = "";
             if (word.charAt(i) == ' ') {
@@ -118,7 +87,7 @@ public class DfaSensitiveWords implements ISensitiveWords {
      *
      * @param words      文本
      * @param beginIndex 开始位置
-     * @return 如果存在，则返回敏感词字符的长度，不存在返回0
+     * @return 如果存在，则返回敏感词字符的长度，不存在返回-1
      */
     private int check(String words, int beginIndex) {
         char beginChar = words.charAt(beginIndex);
@@ -133,10 +102,10 @@ public class DfaSensitiveWords implements ISensitiveWords {
                 continue;
             }
             nowMap = (Map) nowMap.get(word);
-            if (nowMap == null) {
+            if (nowMap == null) { //该字符不在敏感词库中直接退出循环
                 break;
             }
-            this.sensitive += word;
+            this.sensitive += word; //是敏感词的字符，先进行拼接
             flag = Boolean.TRUE.equals(nowMap.get(END_MARK_KEY));
             if (flag){
                 i++;
@@ -144,7 +113,6 @@ public class DfaSensitiveWords implements ISensitiveWords {
             }
         }
         return flag ? i : -1;
-
     }
 }
 
