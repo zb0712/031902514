@@ -2,6 +2,8 @@ package com.szb.sensitiveWords;
 
 
 import com.github.houbb.opencc4j.util.ZhConverterUtil;
+import com.github.houbb.pinyin.constant.enums.PinyinStyleEnum;
+import com.github.houbb.pinyin.util.PinyinHelper;
 
 import java.util.*;
 
@@ -55,6 +57,39 @@ public class DfaSensitiveWords implements ISensitiveWords {
         }
     }
 
+    public static boolean isChineseChar(char c) {
+        return String.valueOf(c).matches("[\u4e00-\u9fa5]");
+    }
+
+    public List<MyString> parse(String str) {
+
+        List<MyString> myStringList = new ArrayList<>();
+        for (int i = 0; i < str.length(); i++) {
+            String string = "";
+            MyString myString = new MyString();
+            char c = str.charAt(i);
+            if (isChineseChar(c)) {
+                String s = ""+c;
+                String toPinyin = PinyinHelper.toPinyin(s, PinyinStyleEnum.NORMAL);
+                myString.setString(toPinyin);
+                myString.setIndex(i);
+            } else {
+                myString.setString(String.valueOf(c));
+                myString.setIndex(i);
+            }
+            if (i == 0) {
+                myString.setLength(myString.string.length());
+                myStringList.add(i,myString);
+            } else {
+                myString.setLength(myStringList.get(i-1).length + myString.string.length());
+                myStringList.add(i,myString);
+            }
+
+        }
+
+        return myStringList;
+    }
+
 
     /**
      * 进行敏感词过滤
@@ -66,7 +101,7 @@ public class DfaSensitiveWords implements ISensitiveWords {
         String str = word.replaceAll("([^\\u4e00-\\u9fc2A-Za-z0-9])", " ");
         str = str.toLowerCase();
         String simple = ZhConverterUtil.toSimple(str);
-
+//        simple = parse(simple);
         //循环进行DFA检测
         for (int i = 0; i < word.length(); i++) {
             this.sensitive = "";
@@ -78,6 +113,46 @@ public class DfaSensitiveWords implements ISensitiveWords {
                 IOUtils.addAns(this.sensitive, line, word.substring(i, check));
                 total++;
             }
+        }
+
+    }
+
+    public void filter1(String word,int line) {
+        //去除特殊符号，转换为小写，繁体转简体
+        String str = word.replaceAll("([^\\u4e00-\\u9fc2A-Za-z0-9])", " ");
+        str = str.toLowerCase();
+        String simple = ZhConverterUtil.toSimple(str);
+        String s = "";
+        List<MyString> myStrings = parse(simple);
+        for (MyString myString : myStrings) {
+            s += myString.string;
+        }
+        //循环进行DFA检测
+        for (int i = 0; i < s.length(); i++) {
+            this.sensitive = "";
+            if (s.charAt(i) == ' ') {
+                continue;
+            }
+            int check = check(s, i);
+            if (check == -1) {
+                continue;
+            }
+            int begin=i;
+            int end=check;
+            for (int j = 0; j < myStrings.size(); j++) {
+                if (i > myStrings.get(j).getLength()) {
+                    begin = myStrings.get(j+1).getIndex();
+                } else if (i == myStrings.get(j).getLength()) {
+                    begin = myStrings.get(j+1).getIndex();
+                }
+                if (check > myStrings.get(j).getLength()) {
+                    end = myStrings.get(j+1).getIndex();
+                } else if (check == myStrings.get(j).getLength()) {
+                    end = myStrings.get(j).getIndex();
+                }
+            }
+
+            IOUtils.addAns(this.sensitive, line, word.substring(begin, ++end));
         }
 
     }
@@ -98,6 +173,13 @@ public class DfaSensitiveWords implements ISensitiveWords {
         int i;
         for (i = beginIndex; i < words.length(); i++) {
             char word = words.charAt(i);
+//            String str = ""+word;
+//            String s = PinyinHelper.toPinyin(str, PinyinStyleEnum.FIRST_LETTER);
+
+            //最长匹配
+            if (word == ' ' && flag == true) {
+                break;
+            }
             if (word == ' ' || beginChar >= 'a' && beginChar <= 'z' && word >= '0' && word <= '9' ) {
                 continue;
             }
@@ -107,10 +189,10 @@ public class DfaSensitiveWords implements ISensitiveWords {
             }
             this.sensitive += word; //是敏感词的字符，先进行拼接
             flag = Boolean.TRUE.equals(nowMap.get(END_MARK_KEY));
-            if (flag){
-                i++;
-                break;
-            }
+//            if (flag){
+//                i++;
+//                break;
+//            }
         }
         return flag ? i : -1;
     }

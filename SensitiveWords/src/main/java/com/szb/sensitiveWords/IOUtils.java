@@ -14,9 +14,63 @@ public class IOUtils {
     public static List<String> ans = new ArrayList<>();
 
     /**
+     * 读取敏感词
+     * @param src 读取的文件路径
+     * @return 敏感词库
+     */
+    public static List<String> readWords(String src)  {
+        File file = new File(src);
+        FileInputStream fis;
+        InputStreamReader fileReader = null;
+        BufferedReader br = null;
+        List<String> strings = null;
+        try {
+            fis = new FileInputStream(file);
+            fileReader = new InputStreamReader(fis, StandardCharsets.UTF_8);
+            br = new BufferedReader(fileReader);
+            String str;
+//            int i = 0;
+            strings = new ArrayList<>();
+            while ((str = br.readLine()) != null) {
+//                str = str.toLowerCase();
+//                strings.add(i,str);
+//                i++;
+                SensitiveWords.addWords(str);
+                strings.addAll(SensitiveWords.wordsList);
+                SensitiveWords.addWordsPY(str);
+                strings.addAll(SensitiveWords.wordsList);
+                SensitiveWords.addWordsSZM(str);
+                strings.addAll(SensitiveWords.wordsList);
+                SensitiveWords.addWordsPYSZM(str);
+                strings.addAll(SensitiveWords.wordsList);
+                SensitiveWords.addWordsBSPY(str);
+                strings.addAll(SensitiveWords.wordsList);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (br != null)
+                    br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                if (fileReader != null)
+                    fileReader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return strings;
+    }
+
+
+
+    /**
      * 根据文件绝对路径读入文件
-     * @param src
-     * @return
+     * @param src 读取的文件路径
+     * @return 每行的内容
      */
     public static List<String> readText(String src)  {
         File file = new File(src);
@@ -32,7 +86,7 @@ public class IOUtils {
             int i = 0;
             strings = new ArrayList<>();
             while ((str = br.readLine()) != null) {
-                str = str.toLowerCase();
+//                str = str.toLowerCase();
                 strings.add(i,str);
                 i++;
             }
@@ -63,12 +117,15 @@ public class IOUtils {
      * @param substring 原文中的包含敏感词的字符串
      */
     public static void addAns(String word, int line, String substring) {
+        if (Dictionary.brokenWordToWord.containsKey(word)) {
+            word = Dictionary.brokenWordToWord.get(word);
+        }
         ans.add("Line"+line+": "+"<"+word+"> "+substring);
     }
 
     /**
      * 根据输出绝对路径输出文件
-     * @param desc
+     * @param desc 输出的路径
      */
     public static void writeAns(String desc) {
         BufferedWriter bw = null;
